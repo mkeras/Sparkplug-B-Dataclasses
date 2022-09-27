@@ -59,14 +59,15 @@ class Metric:
 
     def __post_init__(self):
         if isinstance(self.datatype, str):
-            print('string to enum')
             object.__setattr__(self, 'datatype', DataTypes[self.datatype])
+        elif isinstance(self.datatype, int):
+            object.__setattr__(self, 'datatype', DataTypes(self.datatype))
+
         if self.is_null is not True and self.value is not SpecialValues.DO_NOT_SERIALIZE:
             object.__setattr__(self, self._get_datatype_str(), self.value)
         object.__setattr__(self, 'value', SpecialValues.DO_NOT_SERIALIZE)
 
     def _get_datatype_str(self) -> str:
-        print(type(self.datatype), type(DataTypes.Float))
         if self.datatype in [DataTypes.Int8, DataTypes.Int16, DataTypes.Int32,
                              DataTypes.UInt8, DataTypes.UInt16, DataTypes.UInt32]:
             return 'int_value'
@@ -101,7 +102,7 @@ class Payload:
     def __post_init__(self):
         def extract_values(val):
             if isinstance(val, Enum):
-                return val.value
+                return val.name
             return val
 
         def dict_factory(dataclass_):
@@ -121,6 +122,9 @@ class Payload:
                         fill_payload(list_value, sub_protobuf_item)
                 elif isinstance(value, dict):
                     raise NotImplementedError
+                elif key == 'datatype':
+                    datatype = DataTypes[value]
+                    setattr(protobuf_obj, key, datatype.value)
                 else:
                     setattr(protobuf_obj, key, value)
 
@@ -153,7 +157,9 @@ class Payload:
                     for metric_field in fields(Metric):
                         if metric_.HasField(metric_field.name) and not metric_field.name.endswith('_value'):
                             if metric_field.name in ['metadata', 'properties']:
-                                raise NotImplementedError
+                                print(metric_field.name)
+                                continue
+                                # raise NotImplementedError
                             if metric_field.name == 'value':
                                 value_key = metric_.WhichOneof("value")
                                 if value_key in ['dataset_value', 'template_value', 'extension_value']:
@@ -168,14 +174,14 @@ class Payload:
 
         return cls(**values)
 
-
     @classmethod
     def from_dict(cls, payload_dict: dict):
-        raise NotImplementedError
+
         if 'metrics' in payload_dict.keys():
-            for metric_dict in payload_dict['metrics']:
-                pass
-        pass
+            metrics = [Metric(**metric) for metric in payload_dict.pop('metrics')]
+            payload_dict['metrics'] = metrics
+
+        return cls(**payload_dict)
 
 
 

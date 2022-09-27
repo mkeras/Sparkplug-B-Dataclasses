@@ -5,6 +5,28 @@ from .exceptions import *
 NAMESPACE = 'spBv1.0'
 
 
+class Sequencer:
+    def __init__(self, first: int = 0, last: int = 255):
+        self.__first = first
+        self.__last = last
+        self.__current_seq = first - 1
+
+    def __call__(self):
+        self.__current_seq += 1
+        if self.__current_seq > self.__last:
+            self.reset()
+            return self.__call__()
+        return self.__current_seq
+
+    def reset(self):
+        self.__current_seq = self.__first - 1
+        return self
+
+    @property
+    def current_value(self):
+        return None if self.__current_seq < self.__first else self.__current_seq
+
+
 def millis() -> int:
     return round(time()*1000)
 
