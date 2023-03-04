@@ -7,6 +7,11 @@ import json
     
 
 @dataclass(frozen=True)
+class SpBTopic:
+    namespace: str = field(default='flexy_v1.0', init=False)
+
+
+@dataclass(frozen=True)
 class Metadata:
     pass
 
